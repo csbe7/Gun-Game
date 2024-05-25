@@ -149,12 +149,13 @@ public partial class AnimationController : Node
         Transform3D boneTransformLocal = skeleton.GetBoneGlobalPose(bone);
         rightHandStartPos = boneTransformLocal.Origin;//skeleton.ToGlobal(boneTransformLocal.Origin);
         GD.Print(rightHandStartPos);
-        rightHandTarget = GetNode<Node3D>("%IK_targets/right_arm_target");
+        rightHandTarget = GetNode<Node3D>("%right_arm_target");
         rightHandTarget.Position = rightHandStartPos;
-        
+        rightHandTarget.Basis = boneTransformLocal.Basis;
+
         chest = skeleton.FindBone("Chest");
         boneTransformLocal = skeleton.GetBoneGlobalPose(chest);
-        chestStartPos = skeleton.ToGlobal(boneTransformLocal.Origin);
+        chestStartPos = boneTransformLocal.Origin;
 
         c.recoiling = true;
         rightArmIK.Start();
@@ -164,8 +165,10 @@ public partial class AnimationController : Node
     public void Recoil(float delta)
     {
         Transform3D boneTransformLocal = skeleton.GetBoneGlobalPose(chest);
-        boneTransformLocal.Origin = chestStartPos - (c.forwardDir * c.wm.currWeapon.kickback * c.wm.currWeapon.recoilCurve.Sample(recoilProgress) * 0.5f);
-        
+        boneTransformLocal.Origin = chestStartPos - (c.forwardDir.Normalized() * c.wm.currWeapon.kickback * c.wm.currWeapon.recoilCurve.Sample(recoilProgress) * 0.05f);
+        skeleton.SetBonePosePosition(chest, boneTransformLocal.Origin);
+        skeleton.SetBonePoseRotation(chest, boneTransformLocal.Basis.GetRotationQuaternion());
+
         Vector3 newRightPos = rightHandStartPos;
         newRightPos.Z = newRightPos.Z - (c.wm.currWeapon.kickback * c.wm.currWeapon.recoilCurve.Sample(recoilProgress));
         rightHandTarget.Position = newRightPos; //rightHandStartPos - (c.forwardDir * c.wm.currWeapon.kickback * c.wm.currWeapon.recoilCurve.Sample(recoilProgress));
